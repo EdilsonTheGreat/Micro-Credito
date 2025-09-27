@@ -19,7 +19,7 @@ public class Cliente {
         this.apelido = apelido;
         this.telefone = telefone;
         this.endereco = endereco;
-        this.dataCadastro = LocalDate.now();
+        this.dataCadastro = dataCadastro;
     }
 
     public int getId() {

@@ -63,7 +63,22 @@ public class ClienteDAO {
 
 
     }
+    public void delete (String bi){
+        String sql = "DELETE FROM cliente WHERE bi = ?";
 
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, bi);
+
+            int linhasRemovidas = ps.executeUpdate();
+            if (linhasRemovidas > 0) {
+                System.out.println("Cliente removido com sucesso do banco: " + bi);
+            } else {
+                System.out.println("Nenhum cliente encontrado no banco com BI: " + bi);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Falha ao remover cliente: " + e.getMessage());
+        }
+    }
 
 
 

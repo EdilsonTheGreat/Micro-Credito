@@ -97,18 +97,65 @@ public class ClienteService {
 
 
     //2.4 Eliminação de um registo(2.4.1 Numa dada posição)
-   public void removerCliente(int posicao){
+   public void removerClientePorPosicao(int posicao){
+        Cliente cliente = (Cliente) listaCliente.pega(posicao);
         listaCliente.removePosicao(posicao);
+        clienteDAO.delete(cliente.getBi());
+
+   }
+
+    //2.4.2 Com um certo código
+    public void removerClientePorBi(String bi){
+        if (bi ==null || bi.trim().isEmpty()){
+            System.out.println("Bi não pode ser nulo  ou vazio");
+            return ;
+        }
+        boolean encontrado = false;
+        for (int i = 0; i < listaCliente.tamanho(); i++) {
+            Cliente cliente = (Cliente) listaCliente.pega(i);
+            if (cliente.getBi().equalsIgnoreCase(bi.trim())){
+                listaCliente.removePosicao(i);
+                 clienteDAO.delete(bi);    //remover na base de dados
+                encontrado=true;
+                break;
+            }
+        }
+        if (!encontrado){
+            System.out.println("Nenhum cliente encontrado com BI: " + bi);
+        }
+    }
+
+
+    //2.5.1  Imprimir Todos os registos
+    public void imprimirClientes(){
+        listaCliente.imprimir();
+    }
+   // 2.5.2 Segundo um determinado critério (endereco)
+    public void imprimirClientesPorEndereco(String endereco){
+        if (endereco==null ||endereco.trim().isEmpty()){System.out.println("Endereço Não pode ser Nulo (");return;}
+        boolean encontrado=false;
+        for (int i = 0; i < listaCliente.tamanho(); i++) {
+            Cliente cliente = (Cliente) listaCliente.pega(i);
+            if (cliente.getEndereco().equalsIgnoreCase(endereco.trim())){
+                System.out.println(cliente);
+                encontrado = true;
+            }
+        }
+        if (!encontrado){
+            System.out.println("Nenhum cliente encontrado com morada em: " + endereco );
+        }
+
+    }
+
+   // 2.5.3 Os dados ordenados por um determinado atributo.
+   public void imprimirListaOrdenadaPorData() {
+       ListaDuplamenteLigada ordenada = selectionSort();
+       ordenada.imprimir();
    }
 
 
 
-    //2.4.2 Com um certo código
-
-
-
-
-
+    //Metodos auxiliares
     private void carregarClientesDaBase() throws SQLException {
         ListaDuplamenteLigada clientesRetornados = clienteDAO.buscarTodos();
         for (int i = 0; i < clientesRetornados.tamanho(); i++) {
@@ -118,6 +165,41 @@ public class ClienteService {
         System.out.println( this.listaCliente.tamanho() + " clientes carregados da base");
     }
 
+    private ListaDuplamenteLigada selectionSort() {
+        // Criar cópia da lista original
+        ListaDuplamenteLigada copia = new ListaDuplamenteLigada();
+        for (int i = 0; i < listaCliente.tamanho(); i++) {
+            copia.adcionaFim(listaCliente.pega(i));
+        }
+
+        ListaDuplamenteLigada ordenada = new ListaDuplamenteLigada();
+
+        // Enquanto ainda houver elementos na cópia
+            while(copia.tamanho()>0){
+                int indiceMaisRecente = 0;
+                Cliente clienteMaisRecente = (Cliente) copia.pega(indiceMaisRecente);
+
+                // Encontrar cliente mais recente
+                for (int j = 1; j < copia.tamanho(); j++) {
+                    Cliente atual = (Cliente) copia.pega(j);
+                    if (atual.getDataCadastro().isAfter(clienteMaisRecente.getDataCadastro())) {
+                        clienteMaisRecente = atual;
+                        indiceMaisRecente = j;
+                    }
+                }
+
+                //  adiciona na lista ordenada e Remove da cópia
+                    ordenada.adcionaFim(copia.pega(indiceMaisRecente));
+                    copia.removePosicao(indiceMaisRecente);
+
+
+
+
+            }
+
+
+        return ordenada;
+    }
 
     private  boolean validarDados(Cliente cliente){
         if (cliente.getBi() == null || cliente.getBi().isBlank()) {

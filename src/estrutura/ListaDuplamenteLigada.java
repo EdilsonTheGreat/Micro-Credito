@@ -84,7 +84,7 @@ public class ListaDuplamenteLigada implements InterfaceGeral {
     public void removePosicao(int posicao) {
         if (eVazia()){throw new NullPointerException("Estrutura vazia");}
         if (!posicaoOcupada(posicao)){throw new IndexOutOfBoundsException("Posicao " + posicao + "Invalida");}
-        if (totalElem==1) {
+        if (posicao==0) {
             removeInicio();
         }else if (posicao==totalElem-1) {
             removeFim();
@@ -134,7 +134,7 @@ public class ListaDuplamenteLigada implements InterfaceGeral {
     //metodo complementar
     private No pegaNo(int posicao){
         if (!posicaoOcupada(posicao)) {
-            throw new IndexOutOfBoundsException("Posição "+ posicao + "Invalida");
+            throw new IndexOutOfBoundsException("Posição "+ posicao + " Invalida");
         }
         int meio = totalElem/2;
         No actual;
@@ -152,6 +152,7 @@ public class ListaDuplamenteLigada implements InterfaceGeral {
         return actual;
     }
     public void imprimir() {
+
         No actual = primeiro;
         for(int i = 0; i < this.totalElem; i++) {
             System.out.println(actual.getElemento());
