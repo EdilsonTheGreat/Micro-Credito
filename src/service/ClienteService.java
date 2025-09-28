@@ -4,17 +4,26 @@ import dao.ClienteDAO;
 import estrutura.ListaDuplamenteLigada;
 import models.Cliente;
 
+
 import java.sql.SQLException;
 
 public class ClienteService {
     private ClienteDAO clienteDAO;
     private ListaDuplamenteLigada listaCliente;
+    private EmprestimoService empService;
+
+
 
     public ClienteService(ClienteDAO clienteDAO, ListaDuplamenteLigada listaCliente) throws SQLException {
         this.clienteDAO = clienteDAO;
         this.listaCliente = listaCliente;
         carregarClientesDaBase();
     }
+
+    public void setEmpService(EmprestimoService empService) {
+        this.empService = empService;
+    }
+
     // Metodo para cadastrar cliente
     public  void cadastrarCliente(Cliente cliente) throws SQLException {
         if (validarDados(cliente)) {
@@ -80,7 +89,7 @@ public class ClienteService {
             if (novoApelido != null && !novoApelido.trim().isEmpty()) {
                 cliente.setApelido(novoApelido);
             }
-            if (novoTelefone != 0) {
+            if (novoTelefone < 820000000 || novoTelefone > 879999999) {
                 cliente.setTelefone(novoTelefone);
             }
             if (novoEndereco != null && !novoEndereco.trim().isEmpty()) {
@@ -99,32 +108,65 @@ public class ClienteService {
     //2.4 Eliminação de um registo(2.4.1 Numa dada posição)
    public void removerClientePorPosicao(int posicao){
         Cliente cliente = (Cliente) listaCliente.pega(posicao);
+       if (cliente == null) {
+           System.out.println("Cliente não encontrado na posição: " + posicao);
+           return;
+       }
+       int temEmprestimosAtivos = clienteTemEmprestimosAtivos(cliente.getBi());
+       if (temEmprestimosAtivos>0) {
+           System.out.println(" REMOÇÃO BLOQUEADA: Cliente possui empréstimos ATIVOS");
+           System.out.println("   BI do Cliente: " + cliente.getBi());
+           System.out.println("   Ação: Liquidar os empréstimos ativos primeiro");
+           return;
+       }
+       //EmprestimoService emprestimoService = new EmprestimoService();
+       empService.removerEmprestimoPorBiCliente(cliente.getBi());
+       System.out.println("Empréstimos do cliente removidos.");
         listaCliente.removePosicao(posicao);
+       System.out.println("Cliente removido da lista em memória.");
         clienteDAO.delete(cliente.getBi());
+
+
 
    }
 
     //2.4.2 Com um certo código
-    public void removerClientePorBi(String bi){
-        if (bi ==null || bi.trim().isEmpty()){
-            System.out.println("Bi não pode ser nulo  ou vazio");
-            return ;
+    public void removerClientePorBi(String bi) {
+        if (bi == null || bi.trim().isEmpty()) {
+            System.out.println("BI não pode ser nulo ou vazio");
+            return;
         }
+        // VERIFICAR SE CLIENTE POSSUI EMPRÉSTIMOS ATIVOS
+        int temEmprestimos = clienteTemEmprestimosAtivos(bi);
+        if (temEmprestimos>0) {
+            System.out.println(" REMOÇÃO BLOQUEADA: Cliente possui empréstimos ATIVOS");
+            System.out.println("   BI do Cliente: " + bi);
+            System.out.println("   Ação: Liquidar os empréstimos ativos primeiro");
+            return;
+        }
+
         boolean encontrado = false;
         for (int i = 0; i < listaCliente.tamanho(); i++) {
             Cliente cliente = (Cliente) listaCliente.pega(i);
-            if (cliente.getBi().equalsIgnoreCase(bi.trim())){
-                listaCliente.removePosicao(i);
-                 clienteDAO.delete(bi);    //remover na base de dados
-                encontrado=true;
-                break;
+            if (cliente.getBi().equalsIgnoreCase(bi.trim())) {
+               // EmprestimoService emprestimoService = new EmprestimoService();
+            empService.removerEmprestimoPorBiCliente(bi);
+            System.out.println("Empréstimos do cliente removidos.");
+
+            listaCliente.removePosicao(i);
+            System.out.println("Cliente removido da lista em memória.");
+
+            clienteDAO.delete(bi);
+            System.out.println("Cliente " + bi + " removido com sucesso da base de dados.");
+            encontrado = true;
+            break;
             }
         }
-        if (!encontrado){
+
+        if (!encontrado) {
             System.out.println("Nenhum cliente encontrado com BI: " + bi);
         }
     }
-
 
     //2.5.1  Imprimir Todos os registos
     public void imprimirClientes(){
@@ -192,12 +234,7 @@ public class ClienteService {
                     ordenada.adcionaFim(copia.pega(indiceMaisRecente));
                     copia.removePosicao(indiceMaisRecente);
 
-
-
-
             }
-
-
         return ordenada;
     }
 
@@ -237,7 +274,7 @@ public class ClienteService {
 
         }
 
-    private boolean biJaExiste(String bi) {
+    protected boolean biJaExiste(String bi) {
         for (int i = 0; i < listaCliente.tamanho(); i++) {
           Cliente actual = (Cliente) listaCliente.pega(i);
            if (actual.getBi().equalsIgnoreCase(bi.trim())) {
@@ -246,6 +283,12 @@ public class ClienteService {
       }
         return false;
     }
-    }
+
+
+// Metodo auxiliar para verificar se cliente tem empréstimos ativos
+private int clienteTemEmprestimosAtivos(String biCliente) {
+    return empService.clienteTemEmprestimosAtivos(biCliente);
+}
+}
 
 
