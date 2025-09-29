@@ -23,6 +23,8 @@ public class EmprestimoService {
        carregarEmprestimoDaBase();
     }
 
+
+
     public EmprestimoService()  {
         this.listaEmprestimo = new ListaDuplamenteLigada();
     }
@@ -82,7 +84,7 @@ public class EmprestimoService {
     }
 
     //2.3 Alteração dos dados de um determinado registo
-    public void AtualizarEmprestimo(String biEmprestimo,String biCliente, String novoTipo, int numeroPrestacoes) {
+    public void AtualizarEmprestimo(String biEmprestimo,String biCliente, String novoTipo, int numeroPrestacoes ) {
         Emprestimo emprestimo = buscarEmprestimoPorId(biEmprestimo);
         if (emprestimo != null) {
             if (biCliente != null && !biCliente.trim().isEmpty() && clienteService.biJaExiste(biCliente)) {
@@ -101,6 +103,19 @@ public class EmprestimoService {
             }
             System.out.println("Emprestimo atualizado: " + emprestimo);
         }
+    }
+
+    public void atualizarEmprestimoPago(Emprestimo atual) throws SQLException {
+        if (listaEmprestimo == null){ return;}
+
+        for (int i = 0; i < listaEmprestimo.tamanho(); i++) {
+            Emprestimo e = (Emprestimo) listaEmprestimo.pega(i);
+            if (e.getIdEmprestimo().equals(atual.getIdEmprestimo())) {
+                e.setEstado(atual.getEstado());
+                return;
+            }
+        }
+
     }
 
 
@@ -238,7 +253,7 @@ public class EmprestimoService {
             return false;
         }
 
-        if (emprestimo.getValorTotal() <=0) {
+        if (emprestimo.getValorEmprestado() <=0) {
             System.out.println("Valor do emprestimo não pode ser 0 ou negativo");
             return false;
         }
@@ -254,15 +269,40 @@ public class EmprestimoService {
         }
 
 
-        /*if (!emprestimo.getEstado().equalsIgnoreCase("ativo")) {
+        if (!emprestimo.getEstado().equalsIgnoreCase("ativo")) {
             System.out.println("Estado invalido");
             return false;
-        }*/
+        }
+        if (emprestimo.getDataVencimento() == null) {
+            System.out.println("Data de vencimento não pode ser nula");
+            return false;
+        }
+
+        if (emprestimo.getDataVencimento().isBefore(emprestimo.getDataConcessao())) {
+            System.out.println("Data de vencimento não pode ser anterior à data de concessão");
+            return false;
+        }
 
         return true;
 
     }
+    // Buscar empréstimos atrasados
+    public void buscarEmprestimosAtrasados() {
+        boolean encontrado = false;
+        LocalDate hoje = LocalDate.now();
 
+        for (int i = 0; i < listaEmprestimo.tamanho(); i++) {
+            Emprestimo emprestimo = (Emprestimo) listaEmprestimo.pega(i);
+            if (emprestimo.getDataVencimento().isBefore(hoje) &&
+                    !"liquidado".equalsIgnoreCase(emprestimo.getEstado())) {
+                System.out.println(emprestimo);
+                encontrado = true;
+            }
+        }
+        if (!encontrado) {
+            System.out.println("Nenhum empréstimo atrasado encontrado");
+        }
+    }
     // Metodo para verificar se cliente tem empréstimos ativos
     protected int clienteTemEmprestimosAtivos(String biCliente) {
         int empAtivos =0;

@@ -5,31 +5,28 @@ import java.time.LocalDate;
 public class Emprestimo {
     private String idEmprestimo;
     private String biCliente;       // FK para Cliente
-    private double valorTotal;
+    private double valorEmprestado;
+    private double valorAPagar;   // valorTotal + 30% de juro
     private String tipo;         // "prestacao" ou "directo"
     private int numeroPrestacoes; // válido apenas se tipo = "prestacao"
-    private  final double TAXA_JURO = 30;
+    private  final double TAXA_JURO = 0.30;
     private String estado;       // "ativo", "liquidado", "atrasado"
     private LocalDate dataConcessao;
+    private LocalDate dataVencimento;
 
-    public Emprestimo(String idEmprestimo, String biCliente, double valorTotal, String tipo, int numeroPrestacoes, String estado, LocalDate dataConcessao) {
+    public Emprestimo(String idEmprestimo, String biCliente, double valorEmprestado, String tipo, int numeroPrestacoes, String estado, LocalDate dataConcessao, LocalDate dataVencimento) {
         this.idEmprestimo = idEmprestimo;
         this.biCliente = biCliente;
-        this.valorTotal = valorTotal;
+        this.valorEmprestado = valorEmprestado;
         this.tipo = tipo;
         this.numeroPrestacoes = numeroPrestacoes;
         this.estado = estado;
         this.dataConcessao = dataConcessao;
+        this.dataVencimento=  dataVencimento;
+        this.valorAPagar = valorEmprestado + (valorEmprestado * TAXA_JURO);
     }
-    public Emprestimo(String idEmprestimo, String biCliente, double valorTotal, String tipo, int numeroPrestacoes, double TAXA_JURO, String estado, LocalDate dataConcessao) {
-        this.idEmprestimo = idEmprestimo;
-        this.biCliente = biCliente;
-        this.valorTotal = valorTotal;
-        this.tipo = tipo;
-        this.numeroPrestacoes = numeroPrestacoes;
-        this.estado = estado;
-        this.dataConcessao = dataConcessao;
-    }
+
+
 
     public String getIdEmprestimo() {
         return idEmprestimo;
@@ -47,12 +44,18 @@ public class Emprestimo {
         this.biCliente = biCliente;
     }
 
-    public double getValorTotal() {
-        return valorTotal;
+    public double getValorEmprestado() {
+        return valorEmprestado;
     }
 
-    public void setValorTotal(double valorTotal) {
-        this.valorTotal = valorTotal;
+    public void setValorEmprestado(double valorEmprestado) {
+        this.valorEmprestado = valorEmprestado;
+    }
+    public double getValorAPagar() {
+        return valorAPagar;
+    }
+    public void setValorAPagar(double valorAPagar) {
+        this.valorAPagar=valorAPagar;
     }
 
     public String getTipo() {
@@ -91,18 +94,30 @@ public class Emprestimo {
         this.dataConcessao = dataConcessao;
     }
 
+    public LocalDate getDataVencimento() {
+        return dataVencimento;
+    }
+
+    public void setDataVencimento(LocalDate dataVencimento) {
+        this.dataVencimento = dataVencimento;
+    }
+
     @Override
     public String toString() {
         final StringBuffer sb = new StringBuffer("Emprestimo{");
         sb.append("idEmprestimo='").append(idEmprestimo).append('\'');
         sb.append(", biCliente='").append(biCliente).append('\'');
-        sb.append(", valorTotal=").append(valorTotal);
+        sb.append(", valorTotal=").append(valorEmprestado);
+        sb.append(", valor A Pagar=").append(valorAPagar);
         sb.append(", tipo='").append(tipo).append('\'');
         sb.append(", numeroPrestacoes=").append(numeroPrestacoes);
         sb.append(", TAXA_JURO=").append(TAXA_JURO).append('%');
         sb.append(", estado='").append(estado).append('\'');
         sb.append(", dataConcessao=").append(dataConcessao);
+        sb.append(", dataVencimento=").append(dataVencimento);
         sb.append('}');
         return sb.toString();
     }
+
+
 }

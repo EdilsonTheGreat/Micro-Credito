@@ -119,7 +119,7 @@ public class ClienteService {
            System.out.println("   Ação: Liquidar os empréstimos ativos primeiro");
            return;
        }
-       //EmprestimoService emprestimoService = new EmprestimoService();
+
        empService.removerEmprestimoPorBiCliente(cliente.getBi());
        System.out.println("Empréstimos do cliente removidos.");
         listaCliente.removePosicao(posicao);

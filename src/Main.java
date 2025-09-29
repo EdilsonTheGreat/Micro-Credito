@@ -1,11 +1,14 @@
 import dao.ClienteDAO;
 import dao.DBConnection;
 import dao.EmprestimoDAO;
+import dao.PagamentoDAO;
 import estrutura.ListaDuplamenteLigada;
 import models.Cliente;
 import models.Emprestimo;
+import models.Pagamento;
 import service.ClienteService;
 import service.EmprestimoService;
+import service.PagamentoService;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -16,34 +19,38 @@ public class Main {
         Connection connection = DBConnection.getConnection();
         ClienteDAO clienteDAO = new ClienteDAO(connection);
         EmprestimoDAO emprestimoDAO = new EmprestimoDAO(connection);
+        PagamentoDAO pagamentoDAO = new PagamentoDAO(connection);
         ListaDuplamenteLigada listaClientes = new ListaDuplamenteLigada();
         ListaDuplamenteLigada listaEmprestimos = new ListaDuplamenteLigada();
+        ListaDuplamenteLigada listaPagamentos = new ListaDuplamenteLigada();
         ClienteService clienteService= new ClienteService(clienteDAO,listaClientes);
         EmprestimoService emprestimoService = new EmprestimoService(emprestimoDAO,listaEmprestimos,clienteService);
         clienteService.setEmpService(emprestimoService);
-        Emprestimo eF1 = new Emprestimo("EMP01", "110202329077F", 5000,"prestacao",3, "ativo", LocalDate.of(2023, 2, 5));
-        Emprestimo eF = new Emprestimo("EMP05", "110202329077F", 5000,"prestacao",3, "liquidado", LocalDate.of(2023, 2, 5));
-        Emprestimo eZ = new Emprestimo("EMP06", "110202329077Z", 5000,"prestacao",3, "liquidado", LocalDate.of(2023, 2, 5));
+
+        PagamentoService pagamentoService = new PagamentoService(pagamentoDAO,listaPagamentos,emprestimoService,emprestimoDAO,clienteService);
+
+        Emprestimo eF1 = new Emprestimo("EMP01", "110202329077F", 5000,"direto",0, "ativo", LocalDate.of(2023, 2, 5),LocalDate.of(2023, 2, 5));
+        Emprestimo eF = new Emprestimo("EMP05", "110202329077F", 5000,"prestacao",3, "ativo", LocalDate.of(2023, 2, 5),LocalDate.of(2023, 2, 5));
+        Emprestimo eZ = new Emprestimo("EMP06", "110202329077Z", 5000,"direto",3, "ativo", LocalDate.of(2025, 9, 29),LocalDate.of(2025, 9, 30));
 
 
         Cliente cliente4 = new Cliente(0, "110202329077F", "Euller", "Teixeira", 822254163, "Mavalane D", LocalDate.of(2023, 12, 20));
         Cliente cliente5 = new Cliente(0, "110202329077Z", "João", "Santos", 822254163, "Mavalane D", LocalDate.of(2023, 12, 20));
-        clienteService.cadastrarCliente(cliente4);
-        clienteService.cadastrarCliente(cliente5);
 
-        emprestimoService.cadastrarEmprestimo(eF1);
-        emprestimoService.cadastrarEmprestimo(eF);
-        emprestimoService.cadastrarEmprestimo(eZ);
+
+        pagamentoService.criarPlanoPagamento("EMP05");
+
+
+
+
         System.out.println("\n📌 Lista de Clientes ");
         clienteService.imprimirClientes();
 
         System.out.println("\n📌 Lista de Empréstimos ");
         emprestimoService.imprimirEmprestimos();
 
-        clienteService.removerClientePorPosicao(1);
-        clienteService.removerClientePorBi("110202329077F");
-        System.out.println("\n📌 Lista de Clientes ");
-        clienteService.imprimirClientes();
+
+
 
         System.out.println("\n📌 Lista de Empréstimos ");
         emprestimoService.imprimirEmprestimos();
