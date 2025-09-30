@@ -207,14 +207,16 @@ public class EmprestimoService {
         }
         return ordenada;
     }
-    private void carregarEmprestimoDaBase() throws SQLException {
+    public ListaDuplamenteLigada carregarEmprestimoDaBase() throws SQLException {
         ListaDuplamenteLigada clientesRetornados = emprestimoDAO.buscarTodos();
         for (int i = 0; i < clientesRetornados.tamanho(); i++) {
             Emprestimo emprestimo = (Emprestimo) clientesRetornados.pega(i);
             listaEmprestimo.adcionaFim(emprestimo);
         }
         System.out.println( this.listaEmprestimo.tamanho() + " Emprestimos carregados da base");
+		return clientesRetornados;
     }
+    
     private boolean idEmprestimoExiste(String id){
         for (int i = 0; i < listaEmprestimo.tamanho(); i++) {
             Emprestimo actual = (Emprestimo) listaEmprestimo.pega(i);
@@ -224,8 +226,14 @@ public class EmprestimoService {
         }
         return false;
     }
-    protected String gerarNovoIdEmprestimo() {
-      Emprestimo ultimo = (Emprestimo) listaEmprestimo.pega(listaEmprestimo.tamanho()-1);
+    
+    public String gerarNovoIdEmprestimo() {
+      
+    	  if (listaEmprestimo == null || listaEmprestimo.tamanho() == 0) {
+    	        return "EMP01";
+    	    }
+    	
+    	Emprestimo ultimo = (Emprestimo) listaEmprestimo.pega(listaEmprestimo.tamanho()-1);
         int novoNumero = 1; // padrão, se a lista estiver vazia
 
         if (ultimo != null) {
@@ -242,6 +250,7 @@ public class EmprestimoService {
 
         return String.format("EMP%02d", novoNumero); // EMP01, EMP02, EMP12 ...
     }
+    
     protected boolean validarDados(Emprestimo emprestimo){
         if (idEmprestimoExiste(emprestimo.getIdEmprestimo())){
             System.out.println("Esse emprestimo ja foi cadastrado");
@@ -304,7 +313,7 @@ public class EmprestimoService {
         }
     }
     // Metodo para verificar se cliente tem empréstimos ativos
-    protected int clienteTemEmprestimosAtivos(String biCliente) {
+    public int clienteTemEmprestimosAtivos(String biCliente) {
         int empAtivos =0;
         for (int i = 0; i < listaEmprestimo.tamanho(); i++) {
             Emprestimo emprestimo = (Emprestimo) listaEmprestimo.pega(i);

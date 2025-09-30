@@ -1,6 +1,7 @@
 package service;
 
 import dao.ClienteDAO;
+
 import estrutura.ListaDuplamenteLigada;
 import models.Cliente;
 
@@ -198,13 +199,14 @@ public class ClienteService {
 
 
     //Metodos auxiliares
-    private void carregarClientesDaBase() throws SQLException {
+    public ListaDuplamenteLigada carregarClientesDaBase() throws SQLException {
         ListaDuplamenteLigada clientesRetornados = clienteDAO.buscarTodos();
         for (int i = 0; i < clientesRetornados.tamanho(); i++) {
             Cliente cliente = (Cliente) clientesRetornados.pega(i);
             listaCliente.adcionaFim(cliente);
         }
         System.out.println( this.listaCliente.tamanho() + " clientes carregados da base");
+		return clientesRetornados;
     }
 
     private ListaDuplamenteLigada selectionSort() {

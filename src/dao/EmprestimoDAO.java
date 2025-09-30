@@ -5,9 +5,9 @@ import models.Emprestimo;
 import java.sql.*;
 
 public class EmprestimoDAO {
-    private Connection connection;
+    private final Connection connection;
 
-    public EmprestimoDAO(Connection connection) throws SQLException {
+    public EmprestimoDAO() throws SQLException {
         this.connection = DBConnection.getConnection();
     }
     //cadastrar emprestimo na Base de dados

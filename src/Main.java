@@ -17,9 +17,9 @@ import java.time.LocalDate;
 public class Main {
     public static void main(String[] args) throws SQLException {
         Connection connection = DBConnection.getConnection();
-        ClienteDAO clienteDAO = new ClienteDAO(connection);
-        EmprestimoDAO emprestimoDAO = new EmprestimoDAO(connection);
-        PagamentoDAO pagamentoDAO = new PagamentoDAO(connection);
+        ClienteDAO clienteDAO = new ClienteDAO();
+        EmprestimoDAO emprestimoDAO = new EmprestimoDAO();
+        PagamentoDAO pagamentoDAO = new PagamentoDAO();
         ListaDuplamenteLigada listaClientes = new ListaDuplamenteLigada();
         ListaDuplamenteLigada listaEmprestimos = new ListaDuplamenteLigada();
         ListaDuplamenteLigada listaPagamentos = new ListaDuplamenteLigada();

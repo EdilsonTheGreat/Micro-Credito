@@ -4,9 +4,9 @@ import models.Cliente;
 import java.sql.*;
 
 public class ClienteDAO {
-    private Connection connection;
+    private final Connection connection;
 
-    public ClienteDAO(Connection connection) throws SQLException{
+    public ClienteDAO() throws SQLException{
         this.connection = DBConnection.getConnection();
     }
     //cadastrar cliente na Base de dados

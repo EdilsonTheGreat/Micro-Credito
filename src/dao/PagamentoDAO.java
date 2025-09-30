@@ -7,7 +7,7 @@ import models.Pagamento;
 public class PagamentoDAO {
     private final Connection connection;
 
-    public PagamentoDAO(Connection connection) throws SQLException {
+    public PagamentoDAO() throws SQLException {
         this.connection = DBConnection.getConnection();
     }
 
@@ -38,8 +38,6 @@ public class PagamentoDAO {
         } catch (SQLException e) {
             System.out.println("Falha ao gravar pagamento: " + e.getMessage());
             return false;
-
-
         }
     }
 
