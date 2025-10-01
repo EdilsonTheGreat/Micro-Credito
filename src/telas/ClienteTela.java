@@ -76,14 +76,8 @@ public class ClienteTela extends JPanel implements ActionListener {
 
 		jp2 = new JPanel();
 		jp2.setBackground(Color.decode("#F3F7EC"));
-		jp2.setLayout(new GridLayout(4, 3, 1, 1));
+		jp2.setLayout(new GridLayout(4, 4, 1, 1));
 
-		jl_id = new FormatacaoLabel("Id: ");
-		jp2.add(jl_id);
-
-		tf_id = new FormatacaoTextField(3);
-		((AbstractDocument) tf_id.getDocument()).setDocumentFilter(new LimiteCaracteresFilter(10));
-		jp2.add(tf_id);
 
 		jl_bi = new FormatacaoLabel("Bi: ");
 		jp2.add(jl_bi);
@@ -125,6 +119,12 @@ public class ClienteTela extends JPanel implements ActionListener {
 		
 		jl_vazio = new FormatacaoLabel(" ");
 		jp2.add(jl_vazio);
+		
+		jl_vazio = new FormatacaoLabel(" ");
+		jp2.add(jl_vazio);
+		
+		jl_vazio = new FormatacaoLabel(" ");
+		jp2.add(jl_vazio);
 
 		jb_actualizar = new FormatacaoButton("Actualizar", Color.decode("#3ead40"));
 		jp2.add(jb_actualizar);
@@ -134,6 +134,8 @@ public class ClienteTela extends JPanel implements ActionListener {
 		jb_gravar = new FormatacaoButton("Gravar", Color.decode("#3ead40"));
 		jp2.add(jb_gravar);
 		jb_gravar.addActionListener(this);
+		
+	
 
 		jp1.add("North", jp2);
 		TitledBorder titledBorder = BorderFactory.createTitledBorder(
@@ -249,12 +251,16 @@ public class ClienteTela extends JPanel implements ActionListener {
 				Cliente novoCliente = new Cliente(0, bi, nome, apelido, telefone, endereco, LocalDate.now());
 
 				// Chamar Service/DAO para salvar
-				clienteService.cadastrarCliente(novoCliente);
+				
 
+				if (clienteService.cadastrarCliente(novoCliente)) {
+					carregarTabela();
+					JOptionPane.showMessageDialog(this, "Cliente gravado com sucesso!");
+				} else {
+					JOptionPane.showMessageDialog(this, "Falha na gravacao!");
+				}
 				// Inserir na JTable
-				tabelaModelo.addRow(new Object[] { novoCliente.getId(), novoCliente.getBi(), novoCliente.getNome(),
-						novoCliente.getApelido(), novoCliente.getTelefone(), novoCliente.getEndereco(),
-						novoCliente.getDataCadastro() });
+				carregarTabela();
 
 				JOptionPane.showMessageDialog(this, "Cliente cadastrado com sucesso!");
 
@@ -423,7 +429,7 @@ public class ClienteTela extends JPanel implements ActionListener {
 			tabelaModelo.setRowCount(0);
 
 			// Chama o service para obter a lista de clientes
-			ListaDuplamenteLigada clientes = clienteService.carregarClientesDaBase();
+			ListaDuplamenteLigada clientes = clienteService.getListaCliente();
 
 			for (int i = 0; i < clientes.tamanho(); i++) {
 				Cliente c = (Cliente) clientes.pega(i);
@@ -431,7 +437,7 @@ public class ClienteTela extends JPanel implements ActionListener {
 						c.getEndereco(), c.getDataCadastro() });
 			}
 
-		} catch (SQLException ex) {
+		} catch (Exception ex) {
 			JOptionPane.showMessageDialog(this, "Erro ao carregar clientes: " + ex.getMessage());
 		}
 	}

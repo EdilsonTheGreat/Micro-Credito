@@ -48,9 +48,9 @@ public class EmprestimoTela extends JPanel implements ActionListener {
 	private JLabel jl_vazio, jl_titulo, jl_id, jl_biCliente, jl_valorEmprestado, jl_tipo, jl_numeroPrestacoes,
 			jl_estado, jl_dataConcessao, jl_dataVencimento, jl_bi, jl_posicao;
 	private JTextField tf_valorEmprestado, tf_numeroPrestacoes, tf_dataConcessao, tf_dataVencimento, tf_id_remocao,
-			tf_posicao;
+			tf_posicao, tf_idEmprestimo;
 	private JButton jb_actualizar, jb_gravar, jb_removerCodigo, jb_removerPosicao;
-	private JPanel jpc, jp1, jp2, jp3, jp4;
+	private JPanel jpc, jp1, jp2, jp3, jp4, jp5;
 	private JComboBox jcb_tipo, jcb_estado;
 	private JComboBox<ClienteItem> jcb_cliente;
 	private JScrollPane jsp;
@@ -119,7 +119,8 @@ public class EmprestimoTela extends JPanel implements ActionListener {
 						BorderFactory.createEmptyBorder(5, 5, 5, 5)));
 		jp2.add(jcb_tipo);
 
-		jcb_tipo.setModel(new DefaultComboBoxModel<>(new String[] { "Directo", "Prestacao" }));
+		jcb_tipo.setModel(new DefaultComboBoxModel<>(new String[] { "Selecione o Tipo", "Directo", "Prestacao" }));
+		jcb_tipo.addActionListener(this);
 
 		jl_numeroPrestacoes = new FormatacaoLabel("Numero de Prestacoes: ");
 		jp2.add(jl_numeroPrestacoes);
@@ -153,8 +154,19 @@ public class EmprestimoTela extends JPanel implements ActionListener {
 		jl_vazio = new FormatacaoLabel(" ");
 		jp2.add(jl_vazio);
 
-		jl_vazio = new FormatacaoLabel("");
-		jp2.add(jl_vazio);
+		jp5 = new JPanel();
+		jp5.setBackground(Color.decode("#F3F7EC"));
+		jp5.setLayout(new BorderLayout());
+		TitledBorder titledBorder1 = BorderFactory.createTitledBorder(
+				BorderFactory.createLineBorder(Color.decode("#7d9af4"), 1), "Actualizacao (IdEmprestimo)");
+		titledBorder1.setTitleFont(new Font("Segoe UI", Font.BOLD, 14));
+		jp5.setBorder(titledBorder1);
+
+		tf_idEmprestimo = new FormatacaoTextField(3);
+		((AbstractDocument) tf_idEmprestimo.getDocument()).setDocumentFilter(new LimiteCaracteresFilter(10));
+		jp5.add(tf_idEmprestimo);
+
+		jp2.add(jp5);
 
 		jb_actualizar = new FormatacaoButton("Actualizar", Color.decode("#3ead40"));
 		jp2.add(jb_actualizar);
@@ -173,10 +185,10 @@ public class EmprestimoTela extends JPanel implements ActionListener {
 		jp3 = new JPanel();
 		jp3.setBackground(Color.decode("#F3F7EC"));
 		jp3.setLayout(new BorderLayout());
-		TitledBorder titledBorder1 = BorderFactory.createTitledBorder(
+		TitledBorder titledBorder2 = BorderFactory.createTitledBorder(
 				BorderFactory.createLineBorder(Color.decode("#7d9af4"), 1), "Remocao dos Emprestimos");
-		titledBorder1.setTitleFont(new Font("Segoe UI", Font.BOLD, 14));
-		jp3.setBorder(titledBorder1);
+		titledBorder2.setTitleFont(new Font("Segoe UI", Font.BOLD, 14));
+		jp3.setBorder(titledBorder2);
 
 		jp4 = new JPanel();
 		jp4.setBackground(Color.decode("#F3F7EC"));
@@ -189,7 +201,7 @@ public class EmprestimoTela extends JPanel implements ActionListener {
 		((AbstractDocument) tf_id_remocao.getDocument()).setDocumentFilter(new LimiteCaracteresFilter(10));
 		jp4.add(tf_id_remocao);
 
-		jb_removerCodigo = new FormatacaoButton("Remocao por Codigo", Color.decode("#3ead40"));
+		jb_removerCodigo = new FormatacaoButton("Remocao por IdEmprestimo", Color.decode("#3ead40"));
 		jp4.add(jb_removerCodigo);
 		jb_removerCodigo.addActionListener(this);
 
@@ -277,107 +289,224 @@ public class EmprestimoTela extends JPanel implements ActionListener {
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
-			if (e.getSource() == jb_gravar) {
-				try {
-									
-					Object sel = jcb_cliente.getSelectedItem();
-					if (sel == null) {
-						JOptionPane.showMessageDialog(this, "Seleccione um cliente.");
-						return;
-					}
-					String biCliente = String.valueOf(sel).trim(); 
-					if (biCliente.isEmpty()) {
-						JOptionPane.showMessageDialog(this, "Valor de cliente vazio.");
-						return;
-					}
-					String txtValorEmp = tf_valorEmprestado.getText().trim().replace(",", ".");
-					if (txtValorEmp.isEmpty()) {
-						JOptionPane.showMessageDialog(this, "Indique o Valor Emprestado.");
-						return;
-					}
-					double valorEmprestado = Double.parseDouble(txtValorEmp);
+		if (e.getSource() == jb_gravar) {
+			try {
 
-					String tipo = (String) jcb_tipo.getSelectedItem();
-					if (tipo == null || tipo.isBlank()) {
-						JOptionPane.showMessageDialog(this, "Seleccione o Tipo de empréstimo.");
-						return;
-					}
-
-					int numeroPrestacoes = 0;
-					if (tipo.equalsIgnoreCase("Prestacao")) {
-						String txtPrest = tf_numeroPrestacoes.getText().trim();
-						if (txtPrest.isEmpty()) {
-							JOptionPane.showMessageDialog(this, "Indique o Número de Prestações.");
-							return;
-						}
-						numeroPrestacoes = Integer.parseInt(txtPrest);
-					}
-
-					String estado = (String) jcb_estado.getSelectedItem();
-					if (estado == null || estado.isBlank()) {
-						JOptionPane.showMessageDialog(this, "Seleccione o Estado.");
-						return;
-					}
-
-					java.time.format.DateTimeFormatter df = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy");
-					String txtVenc = tf_dataVencimento.getText().trim();
-					if (txtVenc.isEmpty()) {
-						JOptionPane.showMessageDialog(this, "Indique a Data de Vencimento (dd/MM/yyyy).");
-						return;
-					}
-					java.time.LocalDate dataVencimento;
-					try {
-						dataVencimento = java.time.LocalDate.parse(txtVenc, df);
-					} catch (java.time.format.DateTimeParseException ex) {
-						JOptionPane.showMessageDialog(this, "Data de Vencimento inválida. Use dd/MM/yyyy.");
-						return;
-					}
-
-					// 2) Valores calculados (no service/entidade)
-					String novoId = emprestimoService.gerarNovoIdEmprestimo();
-					java.time.LocalDate dataConcessao = java.time.LocalDate.now();
-
-					// Se a tua classe Emprestimo calcula 30% internamente, basta criar o objecto.
-					// Se preferires calcular aqui, usa uma função do service (ex.:
-					// calcularValorAPagar).
-					Emprestimo novo = new Emprestimo(novoId, biCliente, valorEmprestado, tipo, numeroPrestacoes, estado,
-							dataConcessao, dataVencimento);
-
-					// 3) Persistir
-					emprestimoService.cadastrarEmprestimo(novo);
-
-					// 4) Actualizar a tabela (ordem das colunas que definiste)
-					
-					double taxaPadrao = 30.00;
-					double valorAPagar = novo.getValorAPagar(); 
-
-					tabelaModelo.addRow(new Object[] { novo.getIdEmprestimo(), 
-							novo.getBiCliente(), 
-							String.format(java.util.Locale.US, "%.2f", novo.getValorEmprestado()),
-							String.format(java.util.Locale.US, "%.2f", valorAPagar), novo.getTipo(), numeroPrestacoes,
-							String.format(java.util.Locale.US, "%.2f", taxaPadrao), novo.getEstado(),
-							df.format(novo.getDataConcessao()), df.format(novo.getDataVencimento()) });
-
-					JOptionPane.showMessageDialog(this, "Empréstimo gravado com sucesso!");
-
-
-					jcb_cliente.setSelectedIndex(-1);
-					tf_valorEmprestado.setText("");
-					if (tipo.equalsIgnoreCase("Prestacao"))
-						tf_numeroPrestacoes.setText("");
-					jcb_tipo.setSelectedIndex(0);
-					jcb_estado.setSelectedIndex(0);
-					tf_dataVencimento.setText("");
-
-				} catch (NumberFormatException ex) {
-					JOptionPane.showMessageDialog(this, "Verifique números (valor emprestado/prestações).");
-				} catch (SQLException ex) {
-					JOptionPane.showMessageDialog(this, "Erro ao gravar: " + ex.getMessage());
+				Object sel = jcb_cliente.getSelectedItem();
+				if (sel == null) {
+					JOptionPane.showMessageDialog(this, "Seleccione um cliente.");
+					return;
 				}
+				String biCliente = String.valueOf(sel).trim();
+				if (biCliente.isEmpty()) {
+					JOptionPane.showMessageDialog(this, "Valor de cliente vazio.");
+					return;
+				}
+				String txtValorEmp = tf_valorEmprestado.getText().trim().replace(",", ".");
+				if (txtValorEmp.isEmpty()) {
+					JOptionPane.showMessageDialog(this, "Indique o Valor Emprestado.");
+					return;
+				}
+				double valorEmprestado = Double.parseDouble(txtValorEmp);
+
+				String tipo = (String) jcb_tipo.getSelectedItem();
+				if (tipo.equals("Selecione o Tipo")) {
+					JOptionPane.showMessageDialog(this, "Seleccione o Tipo de empréstimo.");
+					return;
+				}
+
+				int numeroPrestacoes = 0;
+				if (tipo.equalsIgnoreCase("Prestacao")) {
+					String txtPrest = tf_numeroPrestacoes.getText().trim();
+					if (txtPrest.isEmpty()) {
+						JOptionPane.showMessageDialog(this, "Indique o Número de Prestações.");
+						return;
+					}
+					numeroPrestacoes = Integer.parseInt(txtPrest);
+				} else {
+					numeroPrestacoes = 1;
+				}
+
+				String estado = (String) jcb_estado.getSelectedItem();
+				if (estado == null || estado.isBlank()) {
+					JOptionPane.showMessageDialog(this, "Seleccione o Estado.");
+					return;
+				}
+
+				java.time.format.DateTimeFormatter df = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy");
+				String txtVenc = tf_dataVencimento.getText().trim();
+				if (txtVenc.isEmpty()) {
+					JOptionPane.showMessageDialog(this, "Indique a Data de Vencimento (dd/MM/yyyy).");
+					return;
+				}
+				java.time.LocalDate dataVencimento;
+				try {
+					dataVencimento = java.time.LocalDate.parse(txtVenc, df);
+				} catch (java.time.format.DateTimeParseException ex) {
+					JOptionPane.showMessageDialog(this, "Data de Vencimento inválida. Use dd/MM/yyyy.");
+					return;
+				}
+
+				// 2) Valores calculados (no service/entidade)
+				String novoId = emprestimoService.gerarNovoIdEmprestimo();
+				java.time.LocalDate dataConcessao = java.time.LocalDate.now();
+
+				// Se a tua classe Emprestimo calcula 30% internamente, basta criar o objecto.
+				// Se preferires calcular aqui, usa uma função do service (ex.:
+				// calcularValorAPagar).
+				Emprestimo novo = new Emprestimo(novoId, biCliente, valorEmprestado, tipo, numeroPrestacoes, estado,
+						dataConcessao, dataVencimento);
+
+				// 3) Persistir
+				if (emprestimoService.cadastrarEmprestimo(novo)) {
+					carregarTabela();
+					JOptionPane.showMessageDialog(this, "Empréstimo gravado com sucesso!");
+				} else {
+					JOptionPane.showMessageDialog(this, "Falha na gravacao!");
+				}
+
+				// 4) Actualizar a tabela (ordem das colunas que definiste)
+
+				jcb_cliente.setSelectedIndex(-1);
+				tf_valorEmprestado.setText("");
+				if (tipo.equalsIgnoreCase("Prestacao"))
+					tf_numeroPrestacoes.setText("");
+				jcb_tipo.setSelectedIndex(0);
+				jcb_estado.setSelectedIndex(0);
+				tf_dataVencimento.setText("");
+
+			} catch (NumberFormatException ex) {
+				JOptionPane.showMessageDialog(this, "Verifique números (valor emprestado/prestações).");
+			} catch (SQLException ex) {
+				JOptionPane.showMessageDialog(this, "Erro ao gravar: " + ex.getMessage());
+			}
+		} else if (e.getSource() == jb_actualizar) {
+			try {
+				// 1) BI do combo
+				Object sel = jcb_cliente.getSelectedItem();
+				if (sel == null) {
+					JOptionPane.showMessageDialog(this, "Seleccione o cliente (BI) no combo.");
+					return;
+				}
+				String biCliente = String.valueOf(sel).trim();
+				if (biCliente.isEmpty()) {
+					JOptionPane.showMessageDialog(this, "BI do cliente vazio.");
+					return;
+				}
+
+				// 2) Tipo e nº prestações
+				String tipoUI = String.valueOf(jcb_tipo.getSelectedItem());
+				String tipo = (tipoUI == null) ? "" : tipoUI.trim();
+
+				Integer numeroPrest = null;
+				if ("prestacao".equalsIgnoreCase(tipo) || "prestação".equalsIgnoreCase(tipo)) {
+					String txtPrest = tf_numeroPrestacoes.getText().trim();
+					if (txtPrest.isEmpty()) {
+						JOptionPane.showMessageDialog(this, "Indique o número de prestações.");
+						return;
+					}
+					numeroPrest = Integer.parseInt(txtPrest);
+				} else {
+					numeroPrest = 1; 
+				}
+
+				// 3) Estado
+				String estado = String.valueOf(jcb_estado.getSelectedItem());
+				if (estado == null || estado.isBlank()) {
+					JOptionPane.showMessageDialog(this, "Seleccione o estado.");
+					return;
+				}
+
+				// 4) Data de vencimento
+				java.time.format.DateTimeFormatter df = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy");
+				String txtVenc = tf_dataVencimento.getText().trim();
+				java.time.LocalDate dataVenc = null;
+				if (!txtVenc.isEmpty()) {
+					try {
+						dataVenc = java.time.LocalDate.parse(txtVenc, df);
+					} catch (java.time.format.DateTimeParseException ex2) {
+						JOptionPane.showMessageDialog(this, "Data de vencimento inválida. Use dd/MM/yyyy.");
+						return;
+					}
+				}
+
+				// 5) Valor emprestado (opcional)
+				Double novoValorEmp = null;
+				String txtVal = tf_valorEmprestado.getText().trim().replace(",", ".");
+				if (!txtVal.isEmpty()) {
+					novoValorEmp = Double.parseDouble(txtVal);
+					if (novoValorEmp <= 0) {
+						JOptionPane.showMessageDialog(this, "Valor emprestado deve ser > 0.");
+						return;
+					}
+				}else {
+					novoValorEmp= 0.0;
+				}
+
+				String idEmprestimo = null;
+				String txtEmprestimo = tf_idEmprestimo.getText().trim();
+				if (txtEmprestimo.isEmpty()) {
+					JOptionPane.showMessageDialog(this, "Indique o IdEmprestimo");
+					return;
+				}
+				idEmprestimo = txtEmprestimo;
+
+				// 6) Chama o service (ATUALIZA POR BI)
+				emprestimoService.AtualizarEmprestimo(idEmprestimo,biCliente, tipo.isBlank() ? null : tipo, numeroPrest, novoValorEmp, dataVenc);
+				
+				// 7) Refresh da tabela (pode usar cache)
+				// Se não quiseres bater à BD, obtém a lista do service e repopula:
+
+				carregarTabela();
+				JOptionPane.showMessageDialog(this, "Empréstimo actualizado com sucesso!");
+
+			} catch (NumberFormatException nfe) {
+				JOptionPane.showMessageDialog(this, "Verifique os números (prestações/valor).");
+			} catch (IllegalArgumentException iae) {
+				JOptionPane.showMessageDialog(this, iae.getMessage());
+			} catch (Exception exSql) {
+				JOptionPane.showMessageDialog(this, "Erro ao actualizar: " + exSql.getMessage());
+			}
+		} else if (e.getSource() == jcb_tipo) {
+			if (jcb_tipo.getSelectedItem().equals("Directo")) {
+				tf_numeroPrestacoes.setEnabled(false);
+				tf_numeroPrestacoes.setText("1");
+			} else {
+				tf_numeroPrestacoes.setEnabled(true);
+				tf_numeroPrestacoes.setText("");
+			}
+		} else if (e.getSource() == jb_removerCodigo) {
+			String id = tf_id_remocao.getText().trim();
+
+			if (id.isEmpty()) {
+				JOptionPane.showMessageDialog(this, "Informe o ID do emprestimo.");
+				return;
+			}
+
+			try {
+				emprestimoService.removerEmprestimoPorId(id);
+				carregarTabela(); // refresca a JTable
+				JOptionPane.showMessageDialog(this, "Emprestimo removido pelo ID.");
+				tf_id_remocao.setText("");
+			} catch (IllegalStateException ex) {
+				JOptionPane.showMessageDialog(this, ex.getMessage());
+			} catch (Exception ex) {
+				JOptionPane.showMessageDialog(this, "Erro ao remover: " + ex.getMessage());
+			}
+		} else if (e.getSource() == jb_removerPosicao) {
+			try {
+				int pos = Integer.parseInt(tf_posicao.getText().trim());
+				emprestimoService.removerEmprestimoPorPosicao(pos);
+				carregarTabela();
+				JOptionPane.showMessageDialog(this, "Emprestimo removido pela posição." + pos);
+				tf_posicao.setText("");
+			} catch (NumberFormatException ex) {
+				JOptionPane.showMessageDialog(this, "Posição inválida.");
+			} catch (Exception ex) {
+				JOptionPane.showMessageDialog(this, "Erro ao remover: " + ex.getMessage());
 			}
 		}
-
-	
+	}
 
 	private void carregarClientesNoCombo() {
 		DefaultComboBoxModel<ClienteItem> model = new DefaultComboBoxModel<>();
@@ -438,7 +567,7 @@ public class EmprestimoTela extends JPanel implements ActionListener {
 			tabelaModelo.setRowCount(0);
 
 			// Chama o service para obter a lista de clientes
-			ListaDuplamenteLigada emprestimos = emprestimoService.carregarEmprestimoDaBase();
+			ListaDuplamenteLigada emprestimos = emprestimoService.getListaEmprestimo();
 			;
 
 			java.time.format.DateTimeFormatter df = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -453,7 +582,7 @@ public class EmprestimoTela extends JPanel implements ActionListener {
 						e.getEstado(), df.format(e.getDataConcessao()), df.format(e.getDataVencimento()) });
 			}
 
-		} catch (SQLException ex) {
+		} catch (Exception ex) {
 			JOptionPane.showMessageDialog(this, "Erro ao carregar emprestimos: " + ex.getMessage());
 		}
 	}

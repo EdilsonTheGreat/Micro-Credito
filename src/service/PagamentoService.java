@@ -12,7 +12,7 @@ import java.time.LocalDate;
 public class PagamentoService {
 	private PagamentoDAO pagamentoDAO;
 	private EmprestimoDAO emprestimoDAO;
-	private ListaDuplamenteLigada listaPagameto;
+	private ListaDuplamenteLigada listaPagamento;
 	private EmprestimoService emprestimoService;
 	private ClienteService clienteService;
 
@@ -20,12 +20,26 @@ public class PagamentoService {
 			EmprestimoService emprestimoService, EmprestimoDAO emprestimoDAO, ClienteService clienteService)
 			throws SQLException {
 		this.pagamentoDAO = pagamentoDAO;
-		this.listaPagameto = listaPagameto;
+		this.listaPagamento = listaPagameto;
 		this.emprestimoService = emprestimoService;
 		this.emprestimoDAO = emprestimoDAO;
 		this.clienteService = clienteService;
 		carregarPagamentosDaBase();
 	}
+
+	
+	
+	public ListaDuplamenteLigada getListaPagamento() {
+		return listaPagamento;
+	}
+
+
+
+	public void setListaPagamento(ListaDuplamenteLigada listaPagamento) {
+		this.listaPagamento = listaPagamento;
+	}
+
+
 
 	// Registrar um novo pagamento
 	public boolean registrarPagamento(String idEmprestimo, double valorPago) throws SQLException {
@@ -72,7 +86,7 @@ public class PagamentoService {
 
 		if (inserido) {
 			// Adicionar à lista ligada
-			listaPagameto.adcionaFim(pagamento);
+			listaPagamento.adcionaFim(pagamento);
 		}
 
 		// Atualizar saldo do empréstimo
@@ -92,8 +106,8 @@ public class PagamentoService {
 	// Listar pagamentos por empréstimo
 	public ListaDuplamenteLigada listarPagamentosPorEmprestimos(String idEmprestimo) {
 		ListaDuplamenteLigada resultado = new ListaDuplamenteLigada();
-		for (int i = 0; i < listaPagameto.tamanho(); i++) {
-			Pagamento pagamento = (Pagamento) listaPagameto.pega(i);
+		for (int i = 0; i < listaPagamento.tamanho(); i++) {
+			Pagamento pagamento = (Pagamento) listaPagamento.pega(i);
 			if (idEmprestimo.equalsIgnoreCase(pagamento.getIdEmprestimo())) {
 				resultado.adcionaFim(pagamento);
 			}
@@ -232,8 +246,8 @@ public class PagamentoService {
 	private double calcularTotalPago(String idEmprestimo) throws SQLException {
 		double soma = 0;
 
-		for (int i = 0; i < listaPagameto.tamanho(); i++) {
-			Pagamento p = (Pagamento) listaPagameto.pega(i);
+		for (int i = 0; i < listaPagamento.tamanho(); i++) {
+			Pagamento p = (Pagamento) listaPagamento.pega(i);
 			if (p.getIdEmprestimo().equals(idEmprestimo)) {
 				soma += p.getValorPago();
 			}
@@ -267,6 +281,7 @@ public class PagamentoService {
 		return ordenada;
 	}
 
+	/*
 	public ListaDuplamenteLigada carregarPagamentosDaBase() throws SQLException {
 		ListaDuplamenteLigada pagamentosRetornados = pagamentoDAO.buscarTodos();
 		for (int i = 0; i < pagamentosRetornados.tamanho(); i++) {
@@ -276,4 +291,19 @@ public class PagamentoService {
 		System.out.println(this.listaPagameto.tamanho() + " pagamento carregados da base");
 		return pagamentosRetornados;
 	}
+	*/
+	
+	public ListaDuplamenteLigada carregarPagamentosDaBase() throws SQLException {
+	 	   ListaDuplamenteLigada listaPagamentoCarregado = pagamentoDAO.buscarTodos();
+	 	    if (listaPagamentoCarregado == null) {
+	 	    	listaPagamentoCarregado = new ListaDuplamenteLigada();
+	 	    } 
+
+	 	    // SUBSTITUI a lista interna (não acumula)
+	 	    this.listaPagamento= listaPagamentoCarregado;
+
+	 	    System.out.println(this.listaPagamento.tamanho() + " pagamentos carregados da base");
+	 	    return this.listaPagamento;
+	    }
+	
 }

@@ -6,6 +6,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.sql.SQLException;
 
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
@@ -16,11 +17,11 @@ import dao.ClienteDAO;
 import dao.EmprestimoDAO;
 import dao.PagamentoDAO;
 import estrutura.ListaDuplamenteLigada;
+import service.ClienteService;
+import service.EmprestimoService;
+import service.PagamentoService;
 
-
-
-
-public class Dashboard extends JFrame implements ActionListener, MouseListener{
+public class Dashboard extends JFrame implements ActionListener, MouseListener {
 
 	private JFrame frame;
 	private Dimension tamanhoDaTela;
@@ -33,7 +34,31 @@ public class Dashboard extends JFrame implements ActionListener, MouseListener{
 	private JMenuItem jmi_MenuPaginaIncial, jmi_login, jmi_sair;
 	private JPanel painelPrincipal, painelEsquerda, painelDireita, painelDireitaCentral, painelNorteDireita;
 	private GridBagConstraints gbc;
+
+	private ClienteService clienteService;
+	private EmprestimoService empService;
+	private PagamentoService pagService;
+
 	public Dashboard() {
+
+		try {
+			ClienteDAO cliDao = new ClienteDAO();
+			PagamentoDAO pagDao = new PagamentoDAO();
+			EmprestimoDAO empDao = new EmprestimoDAO();
+			
+			ListaDuplamenteLigada listaCliente = new ListaDuplamenteLigada();
+			ListaDuplamenteLigada listaEmprestimo = new ListaDuplamenteLigada();
+			ListaDuplamenteLigada listaPagamento = new ListaDuplamenteLigada();
+
+			clienteService = new ClienteService(cliDao, listaCliente);
+            empService = new EmprestimoService(empDao, listaEmprestimo, clienteService);
+            pagService = new PagamentoService(pagDao, listaPagamento, empService, empDao, clienteService);
+            
+		} catch (SQLException ex) {
+			ex.printStackTrace();
+			JOptionPane.showMessageDialog(this, "Falha ao iniciar serviços: " + ex.getMessage());
+			throw new RuntimeException(ex);
+		}
 
 		tamanhoDaTela = Toolkit.getDefaultToolkit().getScreenSize();
 		this.setTitle("MozaCredito");
@@ -170,7 +195,6 @@ public class Dashboard extends JFrame implements ActionListener, MouseListener{
 		jb_pagamento.addActionListener(this);
 		painelEsquerda.add(jb_pagamento);
 
-
 		// Sair
 		img = new ImageIcon(
 				"C:\\Users\\rushi\\OneDrive\\Documents\\Workspace - Rushil\\Projecto\\src\\projecto_Novo\\deixar.png");
@@ -240,102 +264,58 @@ public class Dashboard extends JFrame implements ActionListener, MouseListener{
 		painelDireitaCentral.add("Center", labelImagem);
 		painelDireita.add("Center", painelDireitaCentral);
 
-
-	    this.setVisible(true);
+		this.setVisible(true);
 	}
-	
+
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		if (e.getSource() == jb_cliente) {
 			resetarCoresBotoes();
-			   try {
-			        ClienteDAO dao = new ClienteDAO(); // lança SQLException
-			        ListaDuplamenteLigada lista_cliente = new ListaDuplamenteLigada();
-			        service.ClienteService clienteService = new service.ClienteService(dao, lista_cliente); // também pode lançar
+			try {
+				ClienteTela clienteTela = new ClienteTela(clienteService);
+				actualizarPainel(clienteTela);
 
-			        EmprestimoDAO empDao = new EmprestimoDAO();
-			        ListaDuplamenteLigada lista_emprestimo = new ListaDuplamenteLigada();
-			        service.EmprestimoService empService = new service.EmprestimoService(empDao, lista_emprestimo, clienteService);
-			        clienteService.setEmpService(empService);
-			        
-			        
-			        ClienteTela clienteTela = new ClienteTela(clienteService);
-			        actualizarPainel(clienteTela);  
-
-			        actualizarMouseListeners(jb_cliente);
-			        jb_cliente.setBackground(Color.decode("#F3F7EC"));
-			        jb_cliente.setForeground(Color.BLACK);
-			    } catch (Exception ex) {
-			        ex.printStackTrace(); 
-			        javax.swing.JOptionPane.showMessageDialog(
-			            this,
-			            "Não foi possível abrir Clientes: " + ex.getMessage(),
-			            "Erro",
-			            javax.swing.JOptionPane.ERROR_MESSAGE
-			        );
-			    }
+				actualizarMouseListeners(jb_cliente);
+				jb_cliente.setBackground(Color.decode("#F3F7EC"));
+				jb_cliente.setForeground(Color.BLACK);
+			} catch (Exception ex) {
+				ex.printStackTrace();
+				javax.swing.JOptionPane.showMessageDialog(this, "Não foi possível abrir Clientes: " + ex.getMessage(),
+						"Erro", javax.swing.JOptionPane.ERROR_MESSAGE);
+			}
 		} else if (e.getSource() == jb_emprestimo) {
 			resetarCoresBotoes();
 			try {
-		        ClienteDAO dao = new ClienteDAO(); // lança SQLException
-		        ListaDuplamenteLigada lista_cliente = new ListaDuplamenteLigada();
-		        service.ClienteService clienteService = new service.ClienteService(dao, lista_cliente); 
-
-		        EmprestimoDAO empDao = new EmprestimoDAO();
-		        ListaDuplamenteLigada lista_emprestimo = new ListaDuplamenteLigada();
-		        service.EmprestimoService empService = new service.EmprestimoService(empDao, lista_emprestimo, clienteService);
-
-		        
-		        EmprestimoTela emprestimoTela = new EmprestimoTela(empService, clienteService);
-		        actualizarPainel(emprestimoTela);  
-
-		        actualizarMouseListeners(jb_emprestimo);
+				EmprestimoTela emprestimoTela = new EmprestimoTela(empService, clienteService);
+				actualizarPainel(emprestimoTela);
+				actualizarMouseListeners(jb_emprestimo);
 				jb_emprestimo.setBackground(Color.decode("#F3F7EC"));
 				jb_emprestimo.setForeground(Color.BLACK);
-		    } catch (Exception ex) {
-		        ex.printStackTrace(); 
-		        javax.swing.JOptionPane.showMessageDialog(
-		            this,
-		            "Não foi possível abrir Emprestimos: " + ex.getMessage(),
-		            "Erro",
-		            javax.swing.JOptionPane.ERROR_MESSAGE
-		        );
-		    }
+			} catch (Exception ex) {
+				ex.printStackTrace();
+				javax.swing.JOptionPane.showMessageDialog(this,
+						"Não foi possível abrir Emprestimos: " + ex.getMessage(), "Erro",
+						javax.swing.JOptionPane.ERROR_MESSAGE);
+			}
 		} else if (e.getSource() == jb_relatorio) {
 			resetarCoresBotoes();
-			actualizarPainel(new Relatorio());
+			actualizarPainel(new Relatorio(clienteService));
 			actualizarMouseListeners(jb_relatorio);
 			jb_relatorio.setBackground(Color.decode("#F3F7EC"));
 			jb_relatorio.setForeground(Color.BLACK);
 		} else if (e.getSource() == jb_pagamento) {
 			resetarCoresBotoes();
 			try {
-		    	EmprestimoDAO empDao = new EmprestimoDAO();
-		 		ClienteDAO dao = new ClienteDAO();
-		        PagamentoDAO pagdao = new PagamentoDAO();
-		        ListaDuplamenteLigada lista_emprestimo = new ListaDuplamenteLigada();
-		        ListaDuplamenteLigada lista_cliente = new ListaDuplamenteLigada();
-		        ListaDuplamenteLigada lista_pagamento = new ListaDuplamenteLigada();
-		        
-		        service.ClienteService clienteService = new service.ClienteService(dao, lista_cliente); 
-		        service.EmprestimoService empService = new service.EmprestimoService(empDao, lista_emprestimo, clienteService);
-		        service.PagamentoService pagService = new service.PagamentoService(pagdao, lista_pagamento, empService, empDao, clienteService);
-		        
-		        PagamentoTela pagamentoTela = new PagamentoTela(pagService, empService);
-		        actualizarPainel(pagamentoTela);  
-
-		        actualizarMouseListeners(jb_pagamento);
-		        jb_pagamento.setBackground(Color.decode("#F3F7EC"));
-		        jb_pagamento.setForeground(Color.BLACK);
-		    } catch (Exception ex) {
-		        ex.printStackTrace(); 
-		        javax.swing.JOptionPane.showMessageDialog(
-		            this,
-		            "Não foi possível abrir Clientes: " + ex.getMessage(),
-		            "Erro",
-		            javax.swing.JOptionPane.ERROR_MESSAGE
-		        );
-		    }
+				PagamentoTela pagamentoTela = new PagamentoTela(pagService, empService);
+				actualizarPainel(pagamentoTela);
+				actualizarMouseListeners(jb_pagamento);
+				jb_pagamento.setBackground(Color.decode("#F3F7EC"));
+				jb_pagamento.setForeground(Color.BLACK);
+			} catch (Exception ex) {
+				ex.printStackTrace();
+				javax.swing.JOptionPane.showMessageDialog(this, "Não foi possível abrir Clientes: " + ex.getMessage(),
+						"Erro", javax.swing.JOptionPane.ERROR_MESSAGE);
+			}
 		} else if (e.getSource() == jb_sair || e.getSource() == jmi_sair) {
 			System.exit(0);
 		} else if (e.getSource() == jmi_login) {
@@ -345,9 +325,9 @@ public class Dashboard extends JFrame implements ActionListener, MouseListener{
 			this.dispose();
 			new Dashboard();
 		}
-		
-}
-	
+
+	}
+
 	private void resetarCoresBotoes() {
 		JButton[] botoes = { jb_cliente, jb_emprestimo, jb_relatorio, jb_pagamento, jb_sair };
 		for (JButton botao : botoes) {
@@ -356,7 +336,6 @@ public class Dashboard extends JFrame implements ActionListener, MouseListener{
 		}
 	}
 
-	
 	private void actualizarPainel(JPanel novoPainel) {
 
 		painelDireita.remove(painelDireitaCentral);
@@ -369,7 +348,7 @@ public class Dashboard extends JFrame implements ActionListener, MouseListener{
 		painelDireita.repaint();
 
 	}
-	
+
 	private void actualizarMouseListeners(JButton botaoAtivo) {
 		JButton[] botoes = { jb_cliente, jb_emprestimo, jb_relatorio, jb_pagamento, jb_sair };
 		for (JButton botao : botoes) {
@@ -380,7 +359,7 @@ public class Dashboard extends JFrame implements ActionListener, MouseListener{
 			}
 		}
 	}
-	
+
 	@Override
 	public void mouseEntered(MouseEvent e) {
 		if (e.getSource() == jb_sair) {
@@ -399,19 +378,22 @@ public class Dashboard extends JFrame implements ActionListener, MouseListener{
 		}
 		botao.setBackground(Color.decode("#3ead40"));
 	}
+
 	@Override
 	public void mouseClicked(MouseEvent e) {
 		// TODO Auto-generated method stub
-		
+
 	}
+
 	@Override
 	public void mousePressed(MouseEvent e) {
 		// TODO Auto-generated method stub
-		
+
 	}
+
 	@Override
 	public void mouseReleased(MouseEvent e) {
 		// TODO Auto-generated method stub
-		
+
 	}
 }

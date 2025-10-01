@@ -26,21 +26,42 @@ public class EmprestimoService {
 
 
     public EmprestimoService()  {
-        this.listaEmprestimo = new ListaDuplamenteLigada();
+        this.listaEmprestimo  = new ListaDuplamenteLigada();
     }
-    //cadastrar emprestimo
-    public void cadastrarEmprestimo(Emprestimo emprestimo) throws SQLException {
+    
+    
+  
+    public ListaDuplamenteLigada getListaEmprestimo() {
+		return listaEmprestimo;
+	}
+
+
+	public void setListaEmprestimo(ListaDuplamenteLigada listaEmprestimo) {
+		this.listaEmprestimo = listaEmprestimo;
+	}
+
+
+
+	//cadastrar emprestimo
+    public boolean cadastrarEmprestimo(Emprestimo emprestimo) throws SQLException {
         if (validarDados(emprestimo)){
             try {
                 boolean inserido = emprestimoDAO.insert(emprestimo);
-                if (inserido){listaEmprestimo.adcionaFim(emprestimo); System.out.println("Emprestimo " + emprestimo.getIdEmprestimo() + " cadastrado com sucesso (Lista)");}
-
+                if (inserido){
+               listaEmprestimo.adcionaFim(emprestimo);
+                System.out.println("Emprestimo " + emprestimo.getIdEmprestimo() + " cadastrado com sucesso (Lista)");
+                return true;
+                }
+            
             } catch (SQLException e) {
                 System.out.println("Erro ao cadastrar Emprestimo na base de dados: " + e.getMessage());
                 throw e;
+                
             }
         }
+        return false;
     }
+
 
 
     //Busca De um registro(2.2.1 Dois atributos em separados)
@@ -84,8 +105,9 @@ public class EmprestimoService {
     }
 
     //2.3 Alteração dos dados de um determinado registo
-    public void AtualizarEmprestimo(String biEmprestimo,String biCliente, String novoTipo, int numeroPrestacoes ) {
-        Emprestimo emprestimo = buscarEmprestimoPorId(biEmprestimo);
+    public void AtualizarEmprestimo(String idEmprestimo,String biCliente, String novoTipo, int numeroPrestacoes, double novoValor, LocalDate novaData ) {
+        Emprestimo emprestimo = buscarEmprestimoPorId(idEmprestimo);
+
         if (emprestimo != null) {
             if (biCliente != null && !biCliente.trim().isEmpty() && clienteService.biJaExiste(biCliente)) {
                 emprestimo.setBiCliente(biCliente);
@@ -93,8 +115,14 @@ public class EmprestimoService {
             if (novoTipo != null && !novoTipo.trim().isEmpty() && !novoTipo.equalsIgnoreCase(emprestimo.getTipo())) {
                 emprestimo.setTipo(novoTipo);
             }
-            if (numeroPrestacoes <= 0) {
+            if (numeroPrestacoes >= 0) {
                 emprestimo.setNumeroPrestacoes(numeroPrestacoes);
+            }
+            if (novoValor >0){
+                emprestimo.setValorEmprestado(novoValor);
+            }
+            if (novaData != null && !novaData.equals(emprestimo.getDataVencimento())){
+                    emprestimo.setDataVencimento(novaData);
             }
             try {
                 emprestimoDAO.update(emprestimo);
@@ -121,30 +149,44 @@ public class EmprestimoService {
 
     //2.4 Eliminação de um registo(2.4.1 Numa dada posição)
     public void removerEmprestimoPorPosicao(int posicao){
-        Emprestimo emprestimo = (Emprestimo) listaEmprestimo.pega(posicao);
-        listaEmprestimo.removePosicao(posicao);
-        emprestimoDAO.delete(emprestimo.getIdEmprestimo());
+    	 Emprestimo emprestimo = (Emprestimo) listaEmprestimo.pega(posicao);
+         if (emprestimo.getEstado().equalsIgnoreCase("liquidado")){
+             listaEmprestimo.removePosicao(posicao);
+             emprestimoDAO.delete(emprestimo.getIdEmprestimo());
+         }else{
+        	 throw new IllegalStateException(
+     	            "REMOÇÃO BLOQUEADA:\n  Razão: Empréstimo " + emprestimo.getEstado() + "\n  Ação: Liquidar o empréstimo."
+     	        );
+         }
     }
 
     //2.4.2 Com um certo código
     public void removerEmprestimoPorId(String id){
-        if (id ==null || id.trim().isEmpty()){
-            System.out.println("Bi não pode ser nulo  ou vazio");
-            return ;
-        }
-        boolean encontrado = false;
-        for (int i = 0; i < listaEmprestimo.tamanho(); i++) {
-            Emprestimo emprestimo = (Emprestimo) listaEmprestimo.pega(i);
-            if (emprestimo.getIdEmprestimo().equalsIgnoreCase(id.trim())){
-                listaEmprestimo.removePosicao(i);
-                emprestimoDAO.delete(id);    //remover na base de dados
-                encontrado=true;
-                break;
-            }
-        }
-        if (!encontrado){
-            System.out.println("Nenhum Emprestimo encontrado com Id: " + id);
-        }
+    	 if (id ==null || id.trim().isEmpty()){
+             System.out.println("Bi não pode ser nulo  ou vazio");
+             return ;
+         }
+         boolean encontrado = false;
+         for (int i = 0; i < listaEmprestimo.tamanho(); i++) {
+             Emprestimo emprestimo = (Emprestimo) listaEmprestimo.pega(i);
+             if (emprestimo.getIdEmprestimo().equalsIgnoreCase(id.trim())){
+                 if (emprestimo.getEstado().equalsIgnoreCase("liquidado")){
+                     listaEmprestimo.removePosicao(i);
+                     emprestimoDAO.delete(id);    //remover na base de dados
+                     encontrado=true;
+                     break;
+                 }else{
+                	 throw new IllegalStateException(
+                	            "REMOÇÃO BLOQUEADA:\n  Razão: Empréstimo " + emprestimo.getEstado() + "\n  Ação: Liquidar o empréstimo."
+                	        );
+                 }
+
+
+             }
+         }
+         if (!encontrado){
+             System.out.println("Nenhum Emprestimo encontrado com Id: " + id);
+         }
     }
 
     //2.5.1  Imprimir Todos os registos
@@ -207,14 +249,30 @@ public class EmprestimoService {
         }
         return ordenada;
     }
-    public ListaDuplamenteLigada carregarEmprestimoDaBase() throws SQLException {
-        ListaDuplamenteLigada clientesRetornados = emprestimoDAO.buscarTodos();
-        for (int i = 0; i < clientesRetornados.tamanho(); i++) {
-            Emprestimo emprestimo = (Emprestimo) clientesRetornados.pega(i);
+  
+    
+    /*public ListaDuplamenteLigada carregarEmprestimoDaBase() throws SQLException {
+        ListaDuplamenteLigada emprestimosRetornados = emprestimoDAO.buscarTodos();
+        for (int i = 0; i < emprestimosRetornados.tamanho(); i++) {
+            Emprestimo emprestimo = (Emprestimo) emprestimosRetornados.pega(i);
             listaEmprestimo.adcionaFim(emprestimo);
         }
         System.out.println( this.listaEmprestimo.tamanho() + " Emprestimos carregados da base");
-		return clientesRetornados;
+		return emprestimosRetornados;
+    }
+    */
+    
+    public ListaDuplamenteLigada carregarEmprestimoDaBase() throws SQLException {
+ 	   ListaDuplamenteLigada listaEmprestimoCarregado = emprestimoDAO.buscarTodos();
+ 	    if (listaEmprestimoCarregado == null) {
+ 	    	listaEmprestimoCarregado = new ListaDuplamenteLigada();
+ 	    } 
+
+ 	    // SUBSTITUI a lista interna (não acumula)
+ 	    this.listaEmprestimo = listaEmprestimoCarregado;
+
+ 	    System.out.println(this.listaEmprestimo.tamanho() + " emprestimos carregados da base");
+ 	    return this.listaEmprestimo;
     }
     
     private boolean idEmprestimoExiste(String id){
@@ -267,7 +325,7 @@ public class EmprestimoService {
             return false;
         }
 
-        if (!emprestimo.getTipo().equalsIgnoreCase("prestacao") && !emprestimo.getTipo().equalsIgnoreCase("direto")) {
+        if (!emprestimo.getTipo().equalsIgnoreCase("Prestacao") && !emprestimo.getTipo().equalsIgnoreCase("Directo")) {
             System.out.println("Tipo de prestacão não é valido");
             return false;
         }
@@ -325,6 +383,7 @@ public class EmprestimoService {
         }
         return empAtivos;
     }
+    
     //metodo para remover emprestimo na lista caso cliente seja removido
     protected void removerEmprestimoPorBiCliente(String bi){
        if (bi == null ||bi.trim().isBlank()) {

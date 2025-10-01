@@ -45,7 +45,8 @@ import telas.EmprestimoTela.ClienteItem;
 
 public class PagamentoTela extends JPanel implements ActionListener {
 
-	private JLabel jl_vazio, jl_titulo, jl_idEmprestimo, jl_valorPago, jl_numeroParcela, jl_valorPagoSugerido, jl_numeroParcelaSugerido;
+	private JLabel jl_vazio, jl_titulo, jl_idEmprestimo, jl_valorPago, jl_numeroParcela, jl_valorPagoSugerido,
+			jl_numeroParcelaSugerido;
 	private JComboBox<EmprestimoItem> jcb_emprestimo;
 	private JButton jb_gravar;
 	private JPanel jpc, jp1, jp2;
@@ -183,7 +184,7 @@ public class PagamentoTela extends JPanel implements ActionListener {
 		this.add(jpc);
 
 		// fim bloco 2
-		
+
 		carregarEmprestimosNoCombo();
 		inicializarSugestoesAuto();
 		carregarTabela();
@@ -192,83 +193,86 @@ public class PagamentoTela extends JPanel implements ActionListener {
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		if(e.getSource() == jb_gravar) {
-			 try {
-			        EmprestimoItem item = (EmprestimoItem) jcb_emprestimo.getSelectedItem();
-			        if (item == null) {
-			            JOptionPane.showMessageDialog(this, "Seleccione um Id de Empréstimo.", "Aviso", JOptionPane.WARNING_MESSAGE);
-			            return;
-			        }
-			        String idEmprestimo = item.chave;
+		if (e.getSource() == jb_gravar) {
+			try {
+				EmprestimoItem item = (EmprestimoItem) jcb_emprestimo.getSelectedItem();
+				if (item == null) {
+					JOptionPane.showMessageDialog(this, "Seleccione um Id de Empréstimo.", "Aviso",
+							JOptionPane.WARNING_MESSAGE);
+					return;
+				}
+				String idEmprestimo = item.chave;
 
-			        String txtValor = jl_valorPagoSugerido.getText();
-			        if (txtValor == null || txtValor.trim().isEmpty() || "-".equals(txtValor.trim())) {
-			            JOptionPane.showMessageDialog(this, "Valor sugerido indisponível.", "Aviso", JOptionPane.WARNING_MESSAGE);
-			            return;
-			        }
-			        double valorPago = Double.parseDouble(txtValor.trim().replace(" ", "").replace(",", "."));
-			        if (valorPago <= 0) {
-			            JOptionPane.showMessageDialog(this, "O valor pago deve ser positivo.", "Aviso", JOptionPane.WARNING_MESSAGE);
-			            return;
-			        }
+				String txtValor = jl_valorPagoSugerido.getText();
+				if (txtValor == null || txtValor.trim().isEmpty() || "-".equals(txtValor.trim())) {
+					JOptionPane.showMessageDialog(this, "Valor sugerido indisponível.", "Aviso",
+							JOptionPane.WARNING_MESSAGE);
+					return;
+				}
+				double valorPago = Double.parseDouble(txtValor.trim().replace(" ", "").replace(",", "."));
+				if (valorPago <= 0) {
+					JOptionPane.showMessageDialog(this, "O valor pago deve ser positivo.", "Aviso",
+							JOptionPane.WARNING_MESSAGE);
+					return;
+				}
 
-			        // Diagnóstico: confirma mínimo
-			        int proximaParcela = pagamentoService.calcularProximaParcela(idEmprestimo);
+				// Diagnóstico: confirma mínimo
+				int proximaParcela = pagamentoService.calcularProximaParcela(idEmprestimo);
 
-			        Emprestimo emp = emprestimoService.buscarEmprestimoPorId(idEmprestimo);
-			        double valorSemAtraso = emp.getTipo().equalsIgnoreCase("prestacao")
-			                ? emp.getValorAPagar() / emp.getNumeroPrestacoes()
-			                : emp.getValorAPagar();
-			        double juroAtraso = LocalDate.now().isAfter(emp.getDataVencimento()) ? valorSemAtraso * 0.10 : 0.0;
-			        double valorMinimo = valorSemAtraso + juroAtraso;
+				Emprestimo emp = emprestimoService.buscarEmprestimoPorId(idEmprestimo);
+				double valorSemAtraso = emp.getTipo().equalsIgnoreCase("prestacao")
+						? emp.getValorAPagar() / emp.getNumeroPrestacoes()
+						: emp.getValorAPagar();
+				double juroAtraso = LocalDate.now().isAfter(emp.getDataVencimento()) ? valorSemAtraso * 0.10 : 0.0;
+				double valorMinimo = valorSemAtraso + juroAtraso;
 
-			        if (valorPago < valorMinimo) {
-			            JOptionPane.showMessageDialog(this,
-			                String.format(Locale.US,
-			                    "Valor insuficiente.\nMínimo: %.2f (Sem atraso: %.2f, Juro atraso: %.2f)",
-			                    valorMinimo, valorSemAtraso, juroAtraso),
-			                "Aviso", JOptionPane.WARNING_MESSAGE);
-			            return;
-			        }
+				if (valorPago < valorMinimo) {
+					JOptionPane.showMessageDialog(this,
+							String.format(Locale.US,
+									"Valor insuficiente.\nMínimo: %.2f (Sem atraso: %.2f, Juro atraso: %.2f)",
+									valorMinimo, valorSemAtraso, juroAtraso),
+							"Aviso", JOptionPane.WARNING_MESSAGE);
+					return;
+				}
 
-			        boolean sucesso = pagamentoService.registrarPagamento(idEmprestimo, valorPago);
+				boolean sucesso = pagamentoService.registrarPagamento(idEmprestimo, valorPago);
 
-			        if (sucesso) {
-			            JOptionPane.showMessageDialog(this, "Pagamento registado com sucesso!",
-			                    "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+				if (sucesso) {
+					JOptionPane.showMessageDialog(this, "Pagamento registado com sucesso!", "Sucesso",
+							JOptionPane.INFORMATION_MESSAGE);
 
-			            // Limpa labels
-			            jl_valorPagoSugerido.setText("-");
-			            jl_numeroParcelaSugerido.setText("-");
+					// Limpa labels
+					jl_valorPagoSugerido.setText("-");
+					jl_numeroParcelaSugerido.setText("-");
 
-			            // Recarrega do service e repinta a tabela (no EDT)
-			            try {
-			                pagamentoService.carregarPagamentosDaBase();
-			                SwingUtilities.invokeLater(this::carregarTabela);
-			            } catch (SQLException ex) {
-			                JOptionPane.showMessageDialog(this, "Erro ao recarregar pagamentos: " + ex.getMessage(),
-			                        "Erro", JOptionPane.ERROR_MESSAGE);
-			            }
+					// Recarrega do service e repinta a tabela (no EDT)
+					try {
+						pagamentoService.getListaPagamento();
+						SwingUtilities.invokeLater(this::carregarTabela);
+					} catch (Exception ex) {
+						JOptionPane.showMessageDialog(this, "Erro ao recarregar pagamentos: " + ex.getMessage(), "Erro",
+								JOptionPane.ERROR_MESSAGE);
+					}
 
-			            // Recalcular sugestões para o empréstimo seleccionado
-			            preencherSugestoesPagamento();
-			        } else {
-			            JOptionPane.showMessageDialog(this,
-			                    "Não foi possível registar o pagamento.\nVerifique o valor mínimo exigido (juros/atraso).",
-			                    "Aviso", JOptionPane.WARNING_MESSAGE);
-			        }
+					// Recalcular sugestões para o empréstimo seleccionado
+					preencherSugestoesPagamento();
+				} else {
+					JOptionPane.showMessageDialog(this,
+							"Não foi possível registar o pagamento.\nVerifique o valor mínimo exigido (juros/atraso).",
+							"Aviso", JOptionPane.WARNING_MESSAGE);
+				}
 
-			    } catch (NumberFormatException ex) {
-			        JOptionPane.showMessageDialog(this, "Formato numérico inválido.", "Erro", JOptionPane.ERROR_MESSAGE);
-			        ex.printStackTrace();
-			    } catch (SQLException ex) {
-			        JOptionPane.showMessageDialog(this, "Erro de base de dados: " + ex.getMessage(), "Erro",
-			                JOptionPane.ERROR_MESSAGE);
-			        ex.printStackTrace();
-			    } catch (Exception ex) {
-			      JOptionPane.showMessageDialog(this, "Erro: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
-			      ex.printStackTrace();
-			    }
+			} catch (NumberFormatException ex) {
+				JOptionPane.showMessageDialog(this, "Formato numérico inválido.", "Erro", JOptionPane.ERROR_MESSAGE);
+				ex.printStackTrace();
+			} catch (SQLException ex) {
+				JOptionPane.showMessageDialog(this, "Erro de base de dados: " + ex.getMessage(), "Erro",
+						JOptionPane.ERROR_MESSAGE);
+				ex.printStackTrace();
+			} catch (Exception ex) {
+				JOptionPane.showMessageDialog(this, "Erro: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+				ex.printStackTrace();
+			}
 		}
 	}
 
@@ -279,8 +283,8 @@ public class PagamentoTela extends JPanel implements ActionListener {
 		try {
 			// Deve devolver todos os empréstimos; se tiveres um método só dos abertos,
 			// usa-o
-			listaEmprestimos = emprestimoService.carregarEmprestimoDaBase();
-		} catch (SQLException e) {
+			listaEmprestimos = emprestimoService.getListaEmprestimo();
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
@@ -345,72 +349,64 @@ public class PagamentoTela extends JPanel implements ActionListener {
 			return label != null ? label : chave;
 		}
 	}
-	
+
 	private void inicializarSugestoesAuto() {
-	    jcb_emprestimo.addItemListener(e -> {
-	        if (e.getStateChange() == ItemEvent.SELECTED) {
-	            preencherSugestoesPagamento();
-	        }
-	    });
-	    // Força cálculo inicial se já houver itens
-	    if (jcb_emprestimo.getItemCount() > 0) {
-	        preencherSugestoesPagamento();
-	    }
+		jcb_emprestimo.addItemListener(e -> {
+			if (e.getStateChange() == ItemEvent.SELECTED) {
+				preencherSugestoesPagamento();
+			}
+		});
+		// Força cálculo inicial se já houver itens
+		if (jcb_emprestimo.getItemCount() > 0) {
+			preencherSugestoesPagamento();
+		}
 	}
 
 	private void preencherSugestoesPagamento() {
-	    try {
-	        EmprestimoItem sel = (EmprestimoItem) jcb_emprestimo.getSelectedItem();
-	        if (sel == null) return;
+		try {
+			EmprestimoItem sel = (EmprestimoItem) jcb_emprestimo.getSelectedItem();
+			if (sel == null)
+				return;
 
-	        String idEmprestimo = sel.chave;
-	        Emprestimo emp = emprestimoService.buscarEmprestimoPorId(idEmprestimo);
+			String idEmprestimo = sel.chave;
+			Emprestimo emp = emprestimoService.buscarEmprestimoPorId(idEmprestimo);
 
-	        int proximaParcela = pagamentoService.calcularProximaParcela(emp.getIdEmprestimo());
+			int proximaParcela = pagamentoService.calcularProximaParcela(emp.getIdEmprestimo());
 
-	        double valorSemAtraso = emp.getTipo().equalsIgnoreCase("prestacao")
-	                ? emp.getValorAPagar() / emp.getNumeroPrestacoes()
-	                : emp.getValorAPagar();
+			double valorSemAtraso = emp.getTipo().equalsIgnoreCase("prestacao")
+					? emp.getValorAPagar() / emp.getNumeroPrestacoes()
+					: emp.getValorAPagar();
 
-	        double juroAtraso = LocalDate.now().isAfter(emp.getDataVencimento())
-	                ? valorSemAtraso * 0.10
-	                : 0.0;
+			double juroAtraso = LocalDate.now().isAfter(emp.getDataVencimento()) ? valorSemAtraso * 0.10 : 0.0;
 
-	        double valorMinimo = valorSemAtraso + juroAtraso;
+			double valorMinimo = valorSemAtraso + juroAtraso;
 
-	        jl_numeroParcelaSugerido.setText(String.valueOf(proximaParcela));
-	        jl_valorPagoSugerido.setText(String.format(Locale.US, "%.2f", valorMinimo));
-	        jl_valorPagoSugerido.setToolTipText(String.format(Locale.US,
-	                "Sem atraso: %.2f | Juro atraso: %.2f | Mínimo: %.2f",
-	                valorSemAtraso, juroAtraso, valorMinimo));
+			jl_numeroParcelaSugerido.setText(String.valueOf(proximaParcela));
+			jl_valorPagoSugerido.setText(String.format(Locale.US, "%.2f", valorMinimo));
+			jl_valorPagoSugerido.setToolTipText(String.format(Locale.US,
+					"Sem atraso: %.2f | Juro atraso: %.2f | Mínimo: %.2f", valorSemAtraso, juroAtraso, valorMinimo));
 
-	    } catch (Exception ex) {
-	        ex.printStackTrace();
-	    }
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
 	}
-	
+
 	private void carregarTabela() {
 		tabelaModelo.setRowCount(0);
-	    DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yy");
+		DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yy");
 
-	    ListaDuplamenteLigada lista = null;
-		try {
-			lista = pagamentoService.carregarPagamentosDaBase();
-		} catch (SQLException e) {
-		
-			e.printStackTrace();
+		ListaDuplamenteLigada lista = pagamentoService.getListaPagamento();
+
+		for (int i = 0; i < lista.tamanho(); i++) {
+			Pagamento p = (Pagamento) lista.pega(i);
+			tabelaModelo.addRow(new Object[] { p.getIdPagamento(), // "Id"
+					p.getIdEmprestimo(), // "IdEmprestimo"
+					String.format(Locale.US, "%.2f", p.getValorPago()), // "ValorPago"
+					p.getDataPagamento() != null ? p.getDataPagamento().format(fmt) : "", // "DataPagamento"
+					p.getNumeroParcela(), // "Numero Parcela"
+					String.format(Locale.US, "%.2f", p.getJuroAplicado()) // "Juro Aplicado"
+			});
 		}
-	    for (int i = 0; i < lista.tamanho(); i++) {
-	        Pagamento p = (Pagamento) lista.pega(i);
-	        tabelaModelo.addRow(new Object[]{
-	            p.getIdPagamento(),                                   // "Id"
-	            p.getIdEmprestimo(),                                  // "IdEmprestimo"
-	            String.format(Locale.US, "%.2f", p.getValorPago()),   // "ValorPago"
-	            p.getDataPagamento() != null ? p.getDataPagamento().format(fmt) : "", // "DataPagamento"
-	            p.getNumeroParcela(),                                 // "Numero Parcela"
-	            String.format(Locale.US, "%.2f", p.getJuroAplicado()) // "Juro Aplicado"
-	        });
-	    }
 	}
 
 	class FormatacaoTextField extends JTextField {

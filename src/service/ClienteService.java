@@ -26,22 +26,34 @@ public class ClienteService {
     }
 
     // Metodo para cadastrar cliente
-    public  void cadastrarCliente(Cliente cliente) throws SQLException {
+    public  boolean cadastrarCliente(Cliente cliente) throws SQLException {
         if (validarDados(cliente)) {
             try {
                 boolean inserido = clienteDAO.insert(cliente); // Insere na base de dados
                 if (inserido){
                     listaCliente.adcionaFim(cliente);// Insere na listaDuplamenteLigada
                     System.out.println("Cliente " + cliente.getId() + " cadastrado com sucesso (Lista)");
+                    return true;
                 }
             } catch (SQLException e) {
                 System.out.println("Erro ao cadastrar cliente na base de dados: " + e.getMessage());
                 throw e;
             }
         }
+        return false;
     }
 
-    //Busca De um registro(2.2.1 Dois atributos em separados)
+    
+    
+    public ListaDuplamenteLigada getListaCliente() {
+		return listaCliente;
+	}
+
+	public void setListaCliente(ListaDuplamenteLigada listaCliente) {
+		this.listaCliente = listaCliente;
+	}
+
+	//Busca De um registro(2.2.1 Dois atributos em separados)
     public Cliente buscarClientePorBi(String bi){
         if (bi ==null || bi.trim().isEmpty()){
           System.out.println("Bi não pode ser nulo  ou vazio");
@@ -199,7 +211,7 @@ public class ClienteService {
 
 
     //Metodos auxiliares
-    public ListaDuplamenteLigada carregarClientesDaBase() throws SQLException {
+   /* public ListaDuplamenteLigada carregarClientesDaBase() throws SQLException {
         ListaDuplamenteLigada clientesRetornados = clienteDAO.buscarTodos();
         for (int i = 0; i < clientesRetornados.tamanho(); i++) {
             Cliente cliente = (Cliente) clientesRetornados.pega(i);
@@ -208,7 +220,22 @@ public class ClienteService {
         System.out.println( this.listaCliente.tamanho() + " clientes carregados da base");
 		return clientesRetornados;
     }
+	*/
+   
+   public ListaDuplamenteLigada carregarClientesDaBase() throws SQLException {
+	   ListaDuplamenteLigada listaClienteCarregado = clienteDAO.buscarTodos();
+	    if (listaClienteCarregado == null) {
+	    	listaClienteCarregado = new ListaDuplamenteLigada();
+	    } 
 
+	    // SUBSTITUI a lista interna (não acumula)
+	    this.listaCliente = listaClienteCarregado;
+
+	    System.out.println(this.listaCliente.tamanho() + " clientes carregados da base");
+	    return this.listaCliente;
+   }
+   
+   
     private ListaDuplamenteLigada selectionSort() {
         // Criar cópia da lista original
         ListaDuplamenteLigada copia = new ListaDuplamenteLigada();
