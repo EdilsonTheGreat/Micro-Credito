@@ -1,0 +1,108 @@
+package dao;
+
+import estrutura.ListaDuplamenteLigada;
+import models.Emprestimo;
+import java.sql.*;
+
+public class EmprestimoDAO {
+    private final Connection connection;
+
+    public EmprestimoDAO() throws SQLException {
+        this.connection = DBConnection.getConnection();
+    }
+    //cadastrar emprestimo na Base de dados
+    public boolean insert(Emprestimo emprestimo) throws SQLException {
+        String query = "INSERT INTO Emprestimo "
+                + "(idEmprestimo, biCliente, valorEmprestado, valorAPagar, tipo, numeroPrestacoes, taxaJuro, estado, dataConcessao, dataVencimento) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"; // 10 placeholders
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, emprestimo.getIdEmprestimo());
+            ps.setString(2, emprestimo.getBiCliente());
+            ps.setDouble(3, emprestimo.getValorEmprestado());
+            ps.setDouble(4, emprestimo.getValorAPagar());
+            ps.setString(5, emprestimo.getTipo());
+            ps.setInt(6, emprestimo.getNumeroPrestacoes());
+            ps.setDouble(7, emprestimo.getTAXA_JURO());
+            ps.setString(8, emprestimo.getEstado());
+            ps.setDate(9, java.sql.Date.valueOf(emprestimo.getDataConcessao()));
+            ps.setDate(10, java.sql.Date.valueOf(emprestimo.getDataVencimento()));
+            ps.executeUpdate(); //executa a query
+            System.out.println("Emprestimo " + emprestimo.getIdEmprestimo() + " Registrado (DB)");
+
+        } catch (SQLException e) {
+            System.out.println("Falha ao gravar na base de dados " + e.getMessage());
+            return false;
+        }
+        return true;
+    }
+
+    public void update(Emprestimo emprestimo) throws SQLException {
+        String query = "UPDATE Emprestimo SET biCliente = ?, tipo = ?, numeroPrestacoes = ?, estado = ? WHERE idEmprestimo = ?";
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, emprestimo.getBiCliente());
+            ps.setString(2, emprestimo.getTipo());
+            ps.setInt(3, emprestimo.getNumeroPrestacoes());
+            ps.setString(4,emprestimo.getEstado());
+            ps.setString(5, emprestimo.getIdEmprestimo());
+
+            int linhasAtualizadas = ps.executeUpdate();
+            if (linhasAtualizadas > 0) {
+                System.out.println("Emprestimo atualizado com sucesso no base de dados: " + emprestimo.getIdEmprestimo());
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Falha ao actualizar emprestimo na base de dados: " + emprestimo.getIdEmprestimo());
+            throw new RuntimeException(e);
+        }
+    }
+    public void delete (String id){
+        String sql = "DELETE FROM Emprestimo WHERE idEmprestimo = ?";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1,id);
+
+            int linhasRemovidas = ps.executeUpdate();
+            if (linhasRemovidas > 0) {
+                System.out.println("Emprestimo removido com sucesso do banco: " + id);
+            } else {
+                System.out.println("Nenhum Emprestimo encontrado no banco com BI: " + id);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Falha ao remover cliente: " + e.getMessage());
+        }
+    }
+
+
+
+    //metodo auxiliar para Carregar Emprestimos ja registrados da BD para a lista
+    public ListaDuplamenteLigada buscarTodos() throws SQLException {
+        ListaDuplamenteLigada lista = new ListaDuplamenteLigada();
+        String query = "SELECT * FROM Emprestimo ORDER BY idEmprestimo";
+
+        try (PreparedStatement stmt = connection.prepareStatement(query);
+             ResultSet rs = stmt.executeQuery()) {
+
+            while (rs.next()) {
+                Emprestimo emprestimo = new Emprestimo(
+                        rs.getString("idEmprestimo"),
+                        rs.getString("biCliente"),
+                        rs.getDouble("valorEmprestado"),
+                        rs.getString("tipo"),
+                        rs.getInt("numeroPrestacoes"),
+                        rs.getString("estado"),
+                        rs.getDate("dataConcessao").toLocalDate(),
+                        rs.getDate("dataVencimento").toLocalDate()
+                );
+                emprestimo.setValorAPagar(rs.getDouble("valorAPagar"));
+                lista.adcionaFim(emprestimo);
+            }
+        }
+        return lista;
+    }
+
+
+
+}
